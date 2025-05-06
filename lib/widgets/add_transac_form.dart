@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../helpers/modal_helpers.dart'; // Asegúrate de tener ahí la función saveTransaction()
+
 class AddTransacForm extends StatefulWidget {
   final String type;
+  final Function? refreshData; // Función para actualizar la vista
 
-  AddTransacForm({required this.type});
+  const AddTransacForm({super.key, required this.type, this.refreshData});
 
   @override
   _AddTransacFormState createState() => _AddTransacFormState();
@@ -10,16 +13,22 @@ class AddTransacForm extends StatefulWidget {
 
 class _AddTransacFormState extends State<AddTransacForm> {
   late TextEditingController _dateController;
+  late TextEditingController _amountController;
+  late TextEditingController _descriptionController;
 
   @override
   void initState() {
     super.initState();
     _dateController = TextEditingController();
+    _amountController = TextEditingController();
+    _descriptionController = TextEditingController();
   }
 
   @override
   void dispose() {
     _dateController.dispose();
+    _amountController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -33,7 +42,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
 
     if (pickedDate != null) {
       setState(() {
-        _dateController.text = "${pickedDate.toLocal()}".split(' ')[0];
+        _dateController.text = pickedDate.toIso8601String(); // formato ISO
       });
     }
   }
@@ -48,7 +57,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bgColor, // fondo verde o rojo
+        color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: SingleChildScrollView(
@@ -59,8 +68,6 @@ class _AddTransacFormState extends State<AddTransacForm> {
               style: const TextStyle(color: Colors.white, fontSize: 24),
             ),
             const SizedBox(height: 16),
-
-            // Cuadro blanco
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -70,10 +77,13 @@ class _AddTransacFormState extends State<AddTransacForm> {
               child: Column(
                 children: [
                   TextFormField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Monto'),
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
+                    controller: _descriptionController,
                     decoration: const InputDecoration(labelText: 'Descripción'),
                   ),
                   const SizedBox(height: 10),
@@ -84,16 +94,46 @@ class _AddTransacFormState extends State<AddTransacForm> {
                     onTap: () => _selectDate(context),
                   ),
                   const SizedBox(height: 20),
+
                   ElevatedButton(
-                    onPressed: () {
-                      // Acción insertar
+                    onPressed: () async {
+                      final amount = _amountController.text.trim();
+                      final description = _descriptionController.text.trim();
+                      final date = _dateController.text.isEmpty
+                          ? DateTime.now().toIso8601String()
+                          : _dateController.text;
+
+                      try {
+                        await saveTransaction(
+                          type: widget.type,
+                          amount: amount, // Aquí como String
+                          description: description,
+                          date: date,
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Guardado: $amount | $description | $date')),
+                        );
+
+                        // Recarga los datos y actualiza la vista (en lugar de pop)
+                        widget.refreshData?.call();
+
+                        // Cierra el modal después de guardar la transacción
+                        Navigator.pop(context);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error al guardar: ${e.toString()}')),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                     ),
                     child: const Text('Confirmar'),
                   ),
+
                   const SizedBox(height: 8),
+
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);

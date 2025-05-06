@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart'; // Ajusta el path
-import 'package:test_flutter/helpers/modal_helpers.dart';
+import 'package:test_flutter/helpers/modal_helpers.dart'; // Asegúrate de tener la función showAddIngresoModal y showAddGastoModal
 
-
-
-class DashboardScreen extends StatelessWidget { 
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
 
+class _DashboardScreenState extends State<DashboardScreen> {
+  // Función que se llama para actualizar la vista
+  void _refreshData() {
+    setState(() {}); // Llamamos a setState para que se recargue el FutureBuilder
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -80,26 +87,24 @@ class DashboardScreen extends StatelessWidget {
                     onPressed: () {},
                   ),
                   const Spacer(),
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  //   children: [
-                  //     _buildNavButton(icon: Icons.arrow_upward, color: Colors.green, onPressed: () {}),
-                  //    // _buildNavButton(icon: Icons.menu, color: Colors.black87, onPressed: () {}),
-                  //     _buildNavButton(icon: Icons.arrow_downward, color: Colors.red, onPressed: () {}),
-                  //   ],
-                  // ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildNavButton(
                         icon: Icons.arrow_upward,
                         color: Colors.green,
-                        onPressed: () => showAddIngresoModal(context),
+                        onPressed: () => showAddIngresoModal(
+                          context,
+                          refreshData: _refreshData, // Aquí pasamos la función
+                        ),
                       ),
                       _buildNavButton(
                         icon: Icons.arrow_downward,
                         color: Colors.red,
-                        onPressed: () => showAddGastoModal(context),
+                        onPressed: () => showAddGastoModal(
+                          context,
+                          refreshData: _refreshData, // Aquí también
+                        ),
                       ),
                     ],
                   ),
@@ -116,14 +121,14 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Future<Map<String, double>> _getTotalAmounts() async {
-  final totalIngresos = await TransacDatabase.instance.getTotalAmount('Ingreso');
-  final totalGastos = await TransacDatabase.instance.getTotalAmount('Gasto');
+    final totalIngresos = await TransacDatabase.instance.getTotalAmount('Ingreso');
+    final totalGastos = await TransacDatabase.instance.getTotalAmount('Gasto');
 
-  return {
-    'ingresos': totalIngresos,
-    'gastos': totalGastos,
-  };
-}
+    return {
+      'ingresos': totalIngresos,
+      'gastos': totalGastos,
+    };
+  }
 
   Widget _buildCard(BuildContext context,
       {required String title,

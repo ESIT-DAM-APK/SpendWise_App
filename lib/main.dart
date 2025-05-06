@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'widgets/add_transac.dart'; // Ajustá el path si está en una subcarpeta como 'pages/home.dart'
-import 'views/view_transacs.dart';
+import 'package:test_flutter/views/history_transac.dart';
+import 'views/add_transac.dart'; // Ajustá el path si está en una subcarpeta como 'pages/home.dart'
 import 'views/dashboard_view.dart';
 
 
@@ -18,11 +18,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'APK PRESUPUESTO PERSONAL',
       theme: ThemeData(
         //add color amarillo pastel
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 0, 0)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
       ),
       home: const MyHomePage(title: 'PRESUPUESTO PERSONAL - GRUPO 6'),
     );
@@ -56,20 +56,18 @@ class _MyHomePageState extends State<MyHomePage> {
 Widget _getSelectedPage() {
   switch (_selectedIndex) {
     case 0:
-      //return const DashboardView();
       return DashboardScreen();
-      //     totalIngresos: 0.0, // Aquí deberías obtener el total de ingresos desde la base de datos
-      //     totalGastos: 0.0, // Aquí deberías obtener el total de gastos desde la base de datos
-      //   );  
+
     case 1:
+          return HistoryTransac();
+
+    case 2:
       return FormTransac(onSaved: () {
         setState(() {
           _selectedIndex = 0; // CAMBIAR A LA VISTA DE TRANSACCIONES
         });
       });
-    case 2:
-    //  return const Center(child: Text('Configuración'));
-          return const ViewTransacs();
+      
     default:
       return const Center(child: Text('Página desconocida'));
   }
