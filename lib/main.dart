@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/views/history_transac.dart';
-import 'views/add_transac.dart'; // Ajustá el path si está en una subcarpeta como 'pages/home.dart'
 import 'views/dashboard_view.dart';
+import 'views/login_view.dart'; 
+import 'views/menu_view.dart';
+
 
 
 
@@ -18,13 +20,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'APK PRESUPUESTO PERSONAL',
-      theme: ThemeData(
-        //add color amarillo pastel
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
-      ),
-      home: const MyHomePage(title: 'PRESUPUESTO PERSONAL - GRUPO 6'),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromRGBO(0 , 86, 8, 1), brightness: Brightness.light),
+      useMaterial3: true),
+     // home: const MyHomePage(title: 'PRESUPUESTO PERSONAL - GRUPO 6'),
+        home: const LoginView(), // Cambié a LoginScreen
     );
   }
 }
@@ -49,29 +50,28 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-
-
-
   // Contenido de las páginas según el índice seleccionado
-Widget _getSelectedPage() {
-  switch (_selectedIndex) {
-    case 0:
-      return DashboardScreen();
+  Widget _getSelectedPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return DashboardScreen();
 
-    case 1:
-          return HistoryTransac();
+      case 1:
+            return HistoryTransac();
 
-    case 2:
-      return FormTransac(onSaved: () {
-        setState(() {
-          _selectedIndex = 0; // CAMBIAR A LA VISTA DE TRANSACCIONES
-        });
-      });
-      
-    default:
-      return const Center(child: Text('Página desconocida'));
+      case 2:
+        // return FormTransac(onSaved: () {
+        //   setState(() {
+        //     _selectedIndex = 0; // CAMBIAR A LA VISTA DE TRANSACCIONES
+        //   });
+        // });
+        //return const Center(child: Text('Cerrar Sesion'));
+        return const MenuView();
+        
+      default:
+        return const Center(child: Text('Página desconocida'));
+    }
   }
-}
 
 
 
@@ -93,7 +93,7 @@ Widget _getSelectedPage() {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.money), label: 'Inicio'),
           NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Historial'),
-          NavigationDestination(icon: Icon(Icons.settings), label: 'Ajustes'),
+          NavigationDestination(icon: Icon(Icons.menu), label: 'Menu'),
         ],
       ),
     );

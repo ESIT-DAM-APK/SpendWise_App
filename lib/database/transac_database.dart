@@ -2,6 +2,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../transac_item.dart'; // Ajusta el path si está en una subcarpeta como 'pages/home.dart'
 import 'dart:developer';
+import '../models/user_model.dart'; // Ajusta el path si está en una subcarpeta como 'pages/home.dart'
+// Ajusta el path si está en una subcarpeta como 'pages/home.dart'
 
 
 class TransacDatabase {
@@ -11,6 +13,8 @@ class TransacDatabase {
 
  // static const String tableTransac = 'table_transac'; // <-- ¡CORREGIDO!
   final String tableTransac = 'table_transac';    
+  final String tableUser = 'users';
+
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -35,8 +39,23 @@ class TransacDatabase {
         description TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $tableUser(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+      )
+    ''');
+
+  // Usuario por defecto
+    await db.insert('users', {
+      'username': 'admin',
+      'password': '1234',
+    });
   }
 
+// INICIO funciones CRUD para transacciones
   Future<void> insertTransac(TransacItem item) async {
     final db = await instance.database;
     await db.insert(
@@ -46,8 +65,21 @@ class TransacDatabase {
     );
     print("Transacción guardada: ${item.toMap()}");  // Agregar esto para verificar
     log("Insert ejecutado con: ${item.toMap()}");
+  }
 
+  Future<void> deleteTransac(int id) async {
+    final db = await instance.database;
+    await db.delete('transacciones', where: 'id = ?', whereArgs: [id]);
+  }
 
+  Future<void> updateTransac(TransacItem item) async {
+    final db = await instance.database;
+    await db.update(
+      'transacciones',
+      item.toMap(),
+      where: 'id = ?',
+      whereArgs: [item.id],
+    );
   }
 
   Future<List<TransacItem>> getAllTransacs() async {
@@ -69,5 +101,21 @@ class TransacDatabase {
     return (value != null) ? (value as num).toDouble() : 0.0;
   }
 
-  
+  // INICIO funciones CRUD para transacciones
+
+
+  Future<void> insertUser(UserModel user) async {
+  final db = await instance.database;
+  await db.insert(tableUser, user.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<UserModel?> login(String username, String password) async {
+      final db = await instance.database;
+      final result = await db.query(tableUser,
+          where: 'username = ? AND password = ?', whereArgs: [username, password]);
+      if (result.isNotEmpty) {
+        return UserModel.fromMap(result.first);
+      }
+      return null;
+  }
 }

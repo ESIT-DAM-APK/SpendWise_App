@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import '../helpers/modal_helpers.dart'; // Asegúrate de tener ahí la función saveTransaction()
+import 'package:test_flutter/transac_item.dart';
+
+
 
 class AddTransacForm extends StatefulWidget {
   final String type;
-  final Function? refreshData; // Función para actualizar la vista
+  final TransacItem? existingItem;
+  final void Function()? onSaved;
 
-  const AddTransacForm({super.key, required this.type, this.refreshData});
+  const AddTransacForm({
+    super.key,
+    required this.type,
+    this.existingItem,
+    this.onSaved,
+  });
 
   @override
-  _AddTransacFormState createState() => _AddTransacFormState();
+  State<AddTransacForm> createState() => _AddTransacFormState();
 }
 
 class _AddTransacFormState extends State<AddTransacForm> {
@@ -51,8 +60,11 @@ class _AddTransacFormState extends State<AddTransacForm> {
   Widget build(BuildContext context) {
     final isIngreso = widget.type == 'Ingreso';
     final Color bgColor = isIngreso ? Colors.green : Colors.red;
-    final Color btnColor = isIngreso ? Colors.red : Colors.green;
-    final String btnText = isIngreso ? 'Gastos' : 'Ingresos';
+    final Color btnColor = isIngreso ? Colors.red : Colors.red;
+    final String btnText = isIngreso ? 'Ingreso' : 'Gasto';
+    // color de fuente btnText blanco
+    final Color btnTextColor = Colors.white;
+    final Color textColor = isIngreso ? Colors.white : Colors.white;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -116,7 +128,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
                         );
 
                         // Recarga los datos y actualiza la vista (en lugar de pop)
-                        widget.refreshData?.call();
+                        widget.onSaved?.call();
 
                         // Cierra el modal después de guardar la transacción
                         Navigator.pop(context);
@@ -141,7 +153,12 @@ class _AddTransacFormState extends State<AddTransacForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: btnColor,
                     ),
-                    child: Text(btnText),
+                    //color de fuente btnText blanco
+                    child: Text(
+                      'Cancelar'' $btnText',
+                      style: TextStyle(color: btnTextColor),
+                    ),
+                    //child: Text('Cancelar'+' $btnText'),
                   ),
                 ],
               ),
