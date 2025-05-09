@@ -4,7 +4,12 @@ import 'package:test_flutter/views/history_transac.dart';
 import 'package:test_flutter/views/login_view.dart';
 
 class MenuView extends StatelessWidget {
-  const MenuView({super.key});
+  final int userId; // Añade este parámetro
+
+  const MenuView({
+    super.key,
+    required this.userId, // Hazlo requerido
+  });
 
   void _cerrarSesion(BuildContext context) {
     Navigator.pushAndRemoveUntil(
@@ -15,7 +20,6 @@ class MenuView extends StatelessWidget {
   }
 
   void _cambiarUsuario(BuildContext context) {
-    // Por ahora simula cerrar sesión también
     _cerrarSesion(context);
   }
 
@@ -23,7 +27,6 @@ class MenuView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-
         Container(
           width: double.infinity,
           color: Colors.deepOrange,
@@ -35,27 +38,51 @@ class MenuView extends StatelessWidget {
         ),
 
         const SizedBox(height: 10),
-        const ListTile(
-          title: Text("Bienvenido", style: TextStyle(color: Colors.grey)),
-          subtitle: Text("Usuario 1", style: TextStyle(fontWeight: FontWeight.bold)),
+        ListTile( // Eliminado 'const' aquí
+          title: const Text("Bienvenido", style: TextStyle(color: Colors.grey)),
+          subtitle: Text("Usuario $userId", style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
         const Divider(),
         ListTile(
           title: const Text("Historial"),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => HistoryTransac()));
+            Navigator.push(
+              context, 
+              MaterialPageRoute(
+                builder: (_) => HistoryTransac(
+                  userId: userId,
+                  onNavBarTap: () {},
+                ),
+              ),
+            );
           },
         ),
         ListTile(
           title: const Text("Agregar Ingreso"),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FormTransac(onSaved: () {})));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FormTransac(
+                  userId: userId,
+                  onSaved: () {},
+                ),
+              ),
+            );
           },
         ),
         ListTile(
           title: const Text("Agregar Gasto"),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FormTransac(onSaved: () {})));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FormTransac(
+                  userId: userId,
+                  onSaved: () {},
+                ),
+              ),
+            );
           },
         ),
         const Divider(),

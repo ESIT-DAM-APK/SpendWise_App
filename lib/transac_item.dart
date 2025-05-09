@@ -5,6 +5,8 @@ class TransacItem {
   final double amount;
   final String date;
   final String description;
+  final int userId; // Nuevo campo para asociar transacción con usuario
+
 
   TransacItem({
     this.id,
@@ -12,6 +14,7 @@ class TransacItem {
     required this.amount,
     required this.date,
     required this.description,
+    required this.userId, // Añadido
   });
 
   Map<String, dynamic> toMap() {
@@ -21,6 +24,7 @@ class TransacItem {
       'amount': amount,
       'date': date,
       'description': description,
+      'userId': userId, // Añadido
     };
   }
 
@@ -31,6 +35,7 @@ class TransacItem {
       amount: map['amount'],
       date: map['date'],
       description: map['description'],
+      userId: map['userId'], // Añadido
     );
   }
 }

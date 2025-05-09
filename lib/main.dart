@@ -3,9 +3,21 @@ import 'package:test_flutter/views/history_transac.dart';
 import 'views/dashboard_view.dart';
 import 'views/login_view.dart'; 
 import 'views/menu_view.dart';
+import 'database/transac_database.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  Future(() async {
+    const bool isDevelopment = true; // Cambiar a false en producción
+    
+    if (isDevelopment) {
+      await TransacDatabase.instance.deleteAppDatabase();
+      await TransacDatabase.instance.database;
+    }
+    
     runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -33,7 +45,33 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   String? _filterTipo;
+  int currentUserId = 1; // Esto debería venir de tu sistema de autenticación
   bool _ignoreNavBarTap = false;
+  String currentUserName = "Usuario"; // Nombre del usuario - inicializado por defecto
+
+    // Método para cargar datos del usuario
+  Future<void> _loadUserData() async {
+    final db = await TransacDatabase.instance.database;
+    final user = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [currentUserId],
+      limit: 1,
+    );
+    
+    if (user.isNotEmpty && mounted) {
+      setState(() {
+        currentUserName = user.first['username'] as String;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // Cargar datos del usuario al iniciar
+  }
+
 
 
   // Contenido de las páginas según el índice seleccionado
@@ -41,16 +79,21 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (_selectedIndex) {
       case 0:
         return DashboardScreen(
+          userId: currentUserId, // Pasa el ID del usuario actual
+          userName: currentUserName, // Pasa el nombre del usuario
+
+
           onVerDetalles: (String tipo) {
             setState(() {
               _filterTipo = tipo;
               _selectedIndex = 1;
-              _ignoreNavBarTap = true; // Ignorar el próximo onNavBarTap
+              _ignoreNavBarTap = true;
             });
           },
         );
       case 1:
         return HistoryTransac(
+          userId: currentUserId, // Pasa el ID del usuario actual
           filtroTipo: _filterTipo,
           onNavBarTap: () {
             if (!_ignoreNavBarTap) {
@@ -62,7 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         );
       case 2:
-        return const MenuView();
+        return MenuView(
+          userId: currentUserId, // Pasa el userId actual
+        );
+      // Aquí puedes agregar más páginas según sea necesario
       default:
         return const Center(child: Text('Página desconocida'));
     }

@@ -1,122 +1,214 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../transac_item.dart'; // Ajusta el path si está en una subcarpeta como 'pages/home.dart'
+import '../transac_item.dart';
 import 'dart:developer';
-import '../models/user_model.dart'; // Ajusta el path si está en una subcarpeta como 'pages/home.dart'
-// Ajusta el path si está en una subcarpeta como 'pages/home.dart'
-
+import '../models/user_model.dart';
 
 class TransacDatabase {
   static final TransacDatabase instance = TransacDatabase._init();
   static Database? _database;
+  
   TransacDatabase._init();
 
- // static const String tableTransac = 'table_transac'; // <-- ¡CORREGIDO!
-  final String tableTransac = 'table_transac';    
+  final String tableTransac = 'transactions'; // Cambiado a nombre más descriptivo
   final String tableUser = 'users';
-
 
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB('transac.db');
-
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _onCreateDB);
+
+    return await openDatabase(
+      path,
+      version: 2, // Versión incrementada por cambios de esquema
+      onCreate: _onCreateDB,
+      onUpgrade: _onUpgradeDB,
+      onOpen: (db) async {
+        await _verifyTables(db);
+      },
+    );
   }
 
-  Future _onCreateDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE $tableTransac(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL,
-        amount REAL NOT NULL,
-        date TEXT NOT NULL,
-        description TEXT NOT NULL
-      )
-    ''');
+  Future<void> _verifyTables(Database db) async {
+    try {
+      await db.rawQuery('SELECT 1 FROM $tableUser LIMIT 1');
+      await db.rawQuery('SELECT 1 FROM $tableTransac LIMIT 1');
+    } catch (e) {
+      log('Error verificando tablas: $e');
+      await _onCreateDB(db, 1);
+    }
+  }
 
-    await db.execute('''
-      CREATE TABLE $tableUser(
+  Future<void> _onCreateDB(Database db, int version) async {
+    await db.execute(''' 
+      CREATE TABLE IF NOT EXISTS $tableUser (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL
       )
     ''');
 
-  // Usuario por defecto
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableTransac (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL,
+        description TEXT NOT NULL,
+        userId INTEGER NOT NULL, 
+        FOREIGN KEY (userId) REFERENCES $tableUser(id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Usuario por defecto
     await db.insert(tableUser, {
       'username': 'admin',
       'password': '1234',
     });
   }
 
-// INICIO funciones CRUD para transacciones
-  Future<void> insertTransac(TransacItem item) async {
-    final db = await instance.database;
-    await db.insert(
-      tableTransac, // <- ya lo puede usar directamente
-      item.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    print("Transacción guardada: ${item.toMap()}");  // Agregar esto para verificar
-    log("Insert ejecutado con: ${item.toMap()}");
+  Future<void> _onUpgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $tableTransac (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          date TEXT NOT NULL,
+          description TEXT NOT NULL,
+          userId INTEGER NOT NULL,
+          FOREIGN KEY (userId) REFERENCES $tableUser(id) ON DELETE CASCADE
+        )
+      ''');
+    }
   }
 
-  Future<void> deleteTransac(int id) async {
+  // CRUD para transacciones
+  Future<List<TransacItem>> getTransacsByUser(int userId) async {
     final db = await instance.database;
-    await db.delete(tableTransac, where: 'id = ?', whereArgs: [id]);
+    try {
+      final maps = await db.query(
+        tableTransac,
+        where: 'userId = ?',
+        whereArgs: [userId],
+      );
+      return List.generate(maps.length, (i) => TransacItem.fromMap(maps[i]));
+    } catch (e) {
+      log('Error en getTransacsByUser: $e');
+      return [];
+    }
+  }
+  
+  Future<int> insertTransac(TransacItem item) async {
+    final db = await instance.database;
+    try {
+      final id = await db.insert(
+        tableTransac,
+        item.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      log("Transacción guardada con ID: $id");
+      return id;
+    } catch (e) {
+      log('Error en insertTransac: $e');
+      return -1;
+    }
   }
 
-  Future<void> updateTransac(TransacItem item) async {
+  Future<int> deleteTransac(int id) async {
     final db = await instance.database;
-    await db.update(
-      tableTransac,
-      item.toMap(),
-      where: 'id = ?',
-      whereArgs: [item.id],
-    );
-    print("Transacción actualizada: ${item.toMap()}");
+    try {
+      return await db.delete(
+        tableTransac, 
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      log('Error en deleteTransac: $e');
+      return 0;
+    }
+  }
+
+  Future<int> updateTransac(TransacItem item) async {
+    final db = await instance.database;
+    try {
+      return await db.update(
+        tableTransac,
+        item.toMap(),
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+    } catch (e) {
+      log('Error en updateTransac: $e');
+      return 0;
+    }
   }
 
   Future<List<TransacItem>> getAllTransacs() async {
     final db = await instance.database;
-    final result = await db.query(tableTransac);
-    print("Transacciones recuperadas: $result"); // Esto te dirá si la consulta está devolviendo datos
-    return result.map((json) => TransacItem.fromMap(json)).toList();
+    try {
+      final result = await db.query(tableTransac);
+      return result.map((json) => TransacItem.fromMap(json)).toList();
+    } catch (e) {
+      log('Error en getAllTransacs: $e');
+      return [];
+    }
   }
 
-  Future<double> getTotalAmount(String type) async {
-    final db = await database;
+  Future<double> getTotalAmount(String type, int userId) async {
+    final db = await instance.database;
+    try {
+      final result = await db.rawQuery('''
+        SELECT SUM(amount) as total 
+        FROM $tableTransac 
+        WHERE type = ? AND userId = ?
+      ''', [type, userId]);
+      return result.first['total'] as double? ?? 0.0;
+    } catch (e) {
+      log('Error en getTotalAmount: $e');
+      return 0.0;
+    }
+  }
 
-    final result = await db.rawQuery(
-      'SELECT SUM(amount) as total FROM $tableTransac WHERE type = ?',
-      [type],
+  // CRUD para usuarios
+  Future<int> insertUser(UserModel user) async {
+    final db = await instance.database;
+    try {
+      return await db.insert(
+        tableUser, 
+        user.toMap(), 
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      log('Error en insertUser: $e');
+      return -1;
+    }
+  }
+
+  Future<Map<String, dynamic>?> login(String username, String password) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'users',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username, password],
     );
-
-    final value = result.first['total'];
-    return (value != null) ? (value as num).toDouble() : 0.0;
+    return result.isNotEmpty ? result.first : null;
   }
 
-  // INICIO funciones CRUD para transacciones
-
-
-  Future<void> insertUser(UserModel user) async {
-  final db = await instance.database;
-  await db.insert(tableUser, user.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  // Método para desarrollo: eliminar base de datos
+  Future<void> close() async {
+    final db = await instance.database;
+    db.close();
   }
 
-  Future<UserModel?> login(String username, String password) async {
-      final db = await instance.database;
-      final result = await db.query(tableUser,
-          where: 'username = ? AND password = ?', whereArgs: [username, password]);
-      if (result.isNotEmpty) {
-        return UserModel.fromMap(result.first);
-      }
-      return null;
+  Future<void> deleteAppDatabase() async {  // Cambia el nombre del método
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'transac.db');
+    await deleteDatabase(path);  // Ahora llama a la función de sqflite sin conflicto
   }
 }

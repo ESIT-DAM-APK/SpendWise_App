@@ -4,8 +4,17 @@ import 'package:test_flutter/helpers/modal_helpers.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(String tipo)? onVerDetalles; // nuevo parámetro
+  final int userId; // Añade este parámetro
+  final String userName; // Nuevo parámetro para el nombre
 
-  const DashboardScreen({super.key, this.onVerDetalles});
+
+
+  const DashboardScreen({
+    super.key, 
+    this.onVerDetalles,
+    required this.userId, 
+    required this.userName
+    });
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -21,9 +30,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bienvenido - Usuario', style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.deepOrange, // Cambia el color de la AppBar
-        centerTitle: false,
+        title: Text('Bienvenido, ${widget.userName}', // Muestra el nombre
+               style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),        backgroundColor: Colors.deepOrange, 
+               centerTitle: false,
       ),
       body: FutureBuilder<Map<String, double>>(
         future: _getTotalAmounts(),
@@ -102,7 +111,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.green,
                         onPressed: () => showAddIngresoModal(
                           context,
-                          refreshData: _refreshData, // Aquí pasamos la función
+                          refreshData: _refreshData,
+                          userId: widget.userId, // Accede a userId a través de widget
                         ),
                       ),
                       _buildNavButton(
@@ -111,6 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onPressed: () => showAddGastoModal(
                           context,
                           refreshData: _refreshData, // Aquí también
+                          userId: widget.userId, // Accede a userId a través de widget
                         ),
                       ),
                     ],
@@ -128,8 +139,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<Map<String, double>> _getTotalAmounts() async {
-    final totalIngresos = await TransacDatabase.instance.getTotalAmount('Ingreso');
-    final totalGastos = await TransacDatabase.instance.getTotalAmount('Gasto');
+    final totalIngresos = await TransacDatabase.instance.getTotalAmount('Ingreso', widget.userId);
+    final totalGastos = await TransacDatabase.instance.getTotalAmount('Gasto', widget.userId);
 
     return {
       'ingresos': totalIngresos,

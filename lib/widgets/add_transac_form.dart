@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import '../helpers/modal_helpers.dart';
 import 'package:test_flutter/transac_item.dart';
 import 'package:test_flutter/database/transac_database.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 class AddTransacForm extends StatefulWidget {
   final String type;
   final TransacItem? existingItem;
   final void Function()? onSaved;
+  final int userId; // Añadido
 
   const AddTransacForm({
     super.key,
     required this.type,
     this.existingItem,
     this.onSaved,
+    required this.userId, // Añadido
   });
 
   @override
@@ -64,6 +65,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
           amount: double.tryParse(amount) ?? 0,
           date: date,
           description: description,
+          userId: widget.userId, // Añadido
         );
         await TransacDatabase.instance.updateTransac(updatedItem);
       } else {
@@ -73,6 +75,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
           amount: amount,
           description: description,
           date: date,
+          userId: widget.userId, // Añadido
         );
       }
 

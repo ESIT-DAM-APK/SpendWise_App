@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart'; // Ajusta el path
-import '../transac_item.dart'; // Ajustá el path si está en una subcarpeta
+import '../transac_item.dart'; 
 
 class FormTransac extends StatefulWidget {
   final VoidCallback? onSaved;
+  final int userId; // Añade este parámetro
 
-  const FormTransac({super.key, this.onSaved});
+
+  const FormTransac({
+    super.key, 
+    this.onSaved,
+    required this.userId, // Hazlo requerido
+  });
 
   @override
   State<FormTransac> createState() => _FormTransacState();
@@ -24,6 +30,8 @@ class _FormTransacState extends State<FormTransac> {
       amount: double.parse(_amountController.text),
       date: DateTime.now().toIso8601String(),
       description: _descriptionController.text,
+      userId: widget.userId, // Añadido
+
     );
 
     await TransacDatabase.instance.insertTransac(newTransac);

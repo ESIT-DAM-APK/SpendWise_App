@@ -4,7 +4,7 @@ import 'package:test_flutter/transac_item.dart';
 import 'package:test_flutter/database/transac_database.dart'; // Ajusta el path
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
-void showAddIngresoModal(BuildContext context, {required VoidCallback refreshData}) {
+void showAddIngresoModal(BuildContext context, {required VoidCallback refreshData, required int userId}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true, // Permite que el modal se ajuste al contenido
@@ -27,6 +27,7 @@ void showAddIngresoModal(BuildContext context, {required VoidCallback refreshDat
                     return AddTransacForm(
                       type: 'Ingreso',
                       onSaved: refreshData,
+                      userId: userId, // Añadido
                     );
                   },
                 ),
@@ -39,7 +40,7 @@ void showAddIngresoModal(BuildContext context, {required VoidCallback refreshDat
   );
 }
 
-void showAddGastoModal(BuildContext context, {required VoidCallback refreshData}) {
+void showAddGastoModal(BuildContext context, {required VoidCallback refreshData, required int userId}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true, // Permite que el modal se ajuste al contenido
@@ -62,6 +63,7 @@ void showAddGastoModal(BuildContext context, {required VoidCallback refreshData}
                     return AddTransacForm(
                       type: 'Gasto',
                       onSaved: refreshData,
+                      userId: userId, // Añadido
                     );
                   },
                 ),
@@ -79,7 +81,8 @@ Future<void> saveTransaction({
   required String type,
   required String amount,
   required String description,
-  required String date, // Lo recibimos como string por simplicidad
+  required String date,
+  required int userId, // Añadido
 }) async {
   final parsedAmount = double.tryParse(amount);
   if (parsedAmount == null || amount.isEmpty) throw Exception('Monto inválido');
@@ -91,6 +94,7 @@ Future<void> saveTransaction({
     amount: parsedAmount,
     date: date,
     description: description,
+    userId: userId, // Añadido
   );
 
   await TransacDatabase.instance.insertTransac(newTransac);
@@ -102,6 +106,7 @@ Future<void> updateTransaction({
   required String amount,
   required String description,
   required String date,
+  required int userId, // Añadido
 }) async {
   final parsedAmount = double.tryParse(amount);
   if (parsedAmount == null || amount.isEmpty) throw Exception('Monto inválido');
@@ -114,6 +119,7 @@ Future<void> updateTransaction({
     amount: parsedAmount,
     date: date,
     description: description,
+    userId: userId // Añadido
   );
 
   await TransacDatabase.instance.updateTransac(updatedTransac);

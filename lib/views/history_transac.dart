@@ -7,12 +7,15 @@ import 'package:test_flutter/widgets/add_transac_form.dart';
 class HistoryTransac extends StatefulWidget {
   final String? filtroTipo;
   final VoidCallback? onNavBarTap; // Añade este parámetro
+  final int userId; // Añadido
+
 
 
   const HistoryTransac({
     super.key,
     this.filtroTipo,
     this.onNavBarTap, // Inclúyelo en el constructor
+    required this.userId, // Añadido
      });
 
   @override
@@ -61,7 +64,7 @@ class _HistoryTransacState extends State<HistoryTransac> {
   }
 
   Future<List<TransacItem>> _getTransacsForMonthAndYear(String month, int year) async {
-    final transacs = await TransacDatabase.instance.getAllTransacs(); 
+    final transacs = await TransacDatabase.instance.getTransacsByUser(widget.userId);
     final monthIndex = months.indexOf(month) + 1;
 
     print('Filtrando con: month=$monthIndex, year=$year, tipo=${widget.filtroTipo}');
@@ -256,9 +259,8 @@ class _HistoryTransacState extends State<HistoryTransac> {
         child: AddTransacForm(
           type: tx.type,
           existingItem: tx,
-          onSaved: () {
-            _refreshData(); // Actualiza la lista después de guardar
-          },
+          onSaved: _refreshData,
+          userId: tx.userId, // Pasa el userId desde la transacción existente
         ),
       ),
     );
