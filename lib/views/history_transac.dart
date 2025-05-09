@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart';
 import 'package:test_flutter/transac_item.dart';
 import 'package:intl/intl.dart';
-// Asegúrate de tener la función showEditModal
 import 'package:test_flutter/widgets/add_transac_form.dart';
+
 class HistoryTransac extends StatefulWidget {
-  const HistoryTransac({super.key});
+  final String? filtroTipo;
+  final VoidCallback? onNavBarTap; // Añade este parámetro
+
+
+  const HistoryTransac({
+    super.key,
+    this.filtroTipo,
+    this.onNavBarTap, // Inclúyelo en el constructor
+     });
 
   @override
   State<HistoryTransac> createState() => _HistoryTransacState();
@@ -17,38 +25,62 @@ class _HistoryTransacState extends State<HistoryTransac> {
   int? selectedYear;
 
   List<String> months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+    'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-
-  List<int> years = List.generate(10, (index) => DateTime.now().year - index); // Últimos 10 años
+  
+  List<int> years = List.generate(10, (index) => DateTime.now().year - index);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onNavBarTap?.call();
+    });
+    _loadInitialData();
+  }
 
-    // Asegúrate de que los valores iniciales estén correctamente configurados
-    selectedMonth = months[DateTime.now().month - 1]; // Mes actual
-    selectedYear = DateTime.now().year; // Año actual
+  void _loadInitialData() {
+    selectedMonth = months[DateTime.now().month - 1];
+    selectedYear = DateTime.now().year;
+    _refreshData();
+  }
 
-    _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!); // Inicializamos las transacciones
+  void _refreshData() {
+    setState(() {
+      _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!);
+    });
+  }
+
+  @override
+  void didUpdateWidget(HistoryTransac oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filtroTipo != oldWidget.filtroTipo) {
+      _refreshData();
+    }
   }
 
   Future<List<TransacItem>> _getTransacsForMonthAndYear(String month, int year) async {
     final transacs = await TransacDatabase.instance.getAllTransacs(); 
     final monthIndex = months.indexOf(month) + 1;
-    
-    final filteredTransacs = transacs.where((tx) {
-      final txDate = DateTime.parse(tx.date); // Asegúrate de tener la fecha en formato ISO
-      return txDate.month == monthIndex && txDate.year == year;
-    }).toList();
-    
-    // Ordena las transacciones por fecha descendente
-    filteredTransacs.sort((a, b) {
-      final dateA = DateTime.parse(a.date);
-      final dateB = DateTime.parse(b.date);
-      return dateB.compareTo(dateA); // Orden descendente
-    });
 
+    print('Filtrando con: month=$monthIndex, year=$year, tipo=${widget.filtroTipo}');
+
+    final filteredTransacs = transacs.where((tx) {
+      final txDate = DateTime.parse(tx.date);
+      final bool matchesDate = txDate.month == monthIndex && txDate.year == year;
+      final bool matchesType = widget.filtroTipo == null || 
+                            tx.type.toLowerCase() == widget.filtroTipo!.toLowerCase();
+      
+      print('Transacción: ${tx.type} - Filtro: ${widget.filtroTipo} - Match: $matchesType');
+      
+      return matchesDate && matchesType;
+    }).toList();
+
+    print('Transacciones filtradas: ${filteredTransacs.length}');
+    
+    filteredTransacs.sort((a, b) => DateTime.parse(b.date).compareTo(DateTime.parse(a.date)));
+    
     return filteredTransacs;
   }
 
@@ -56,197 +88,198 @@ class _HistoryTransacState extends State<HistoryTransac> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial de Transacciones'),
-        centerTitle: true,
-        elevation: 0, // Sin sombra para diseño minimalista
-        backgroundColor: Colors.transparent, // Fondo transparente para un diseño limpio
+        title: const Text('Historial de Transacciones', 
+               style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+        centerTitle: false,
+        backgroundColor: Colors.deepOrange,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          _buildFiltersRow(),
+          const SizedBox(height: 16),
+          if (widget.filtroTipo != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Text(
+                'Filtrado por: ${widget.filtroTipo}',
+                style: const TextStyle(fontSize: 20),
+              ),
+            ),
+          Expanded(
+            child: _buildTransactionsList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiltersRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildMonthDropdown(),
+        _buildYearDropdown(),
+      ],
+    );
+  }
+
+  Widget _buildMonthDropdown() {
+    return _buildDropdown(
+      value: selectedMonth!,
+      items: months,
+      onChanged: (value) {
+        selectedMonth = value;
+        _refreshData();
+      },
+    );
+  }
+
+  Widget _buildYearDropdown() {
+    return _buildDropdown(
+      value: selectedYear.toString(),
+      items: years.map((year) => year.toString()).toList(),
+      onChanged: (value) {
+        selectedYear = int.parse(value!);
+        _refreshData();
+      },
+    );
+  }
+
+  Widget _buildTransactionsList() {
+    return FutureBuilder<List<TransacItem>>(
+      future: _transacList,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No hay transacciones para este período.'));
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              return _buildTransactionCard(snapshot.data![index]);
+            },
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildTransactionCard(TransacItem tx) {
+    final isIngreso = tx.type == 'Ingreso';
+    final txAmount = isIngreso ? tx.amount : -tx.amount;
+    final formattedDate = _formatDate(tx.date);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filtro de mes y año
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildDropdown(
-                  value: selectedMonth!,
-                  items: months,
-                  onChanged: (value) {
-                    setState(() {
-                      selectedMonth = value;
-                      _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!);
-                    });
-                  },
-                ),
-                _buildDropdown(
-                  value: selectedYear.toString(),
-                  items: years.map((year) => year.toString()).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedYear = int.parse(value!);
-                      _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!);
-                    });
-                  },
-                ),
-              ],
+            CircleAvatar(
+              backgroundColor: isIngreso ? Colors.green : Colors.red,
+              child: Icon(
+                isIngreso ? Icons.arrow_upward : Icons.arrow_downward,
+                color: Colors.white,
+              ),
             ),
-            const SizedBox(height: 16),
-            // Lista de transacciones
+            const SizedBox(width: 16),
             Expanded(
-              child: FutureBuilder<List<TransacItem>>(
-                future: _transacList,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('No hay transacciones para este filtro.'));
-                  } else {
-                    final transactions = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final tx = transactions[index];
-                        final isIngreso = tx.type == 'Ingreso';
-                        final txAmount = isIngreso ? tx.amount : -tx.amount; // Los gastos como valores negativos
-                        final txDate = DateTime.parse(tx.date);
-                        final formattedDate = DateFormat('dd/MM/yyyy').format(txDate);
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 3, // Menos sombra para un diseño más limpio
-                          // child: ListTile(
-                          //   contentPadding: const EdgeInsets.all(16),
-                          //   leading: CircleAvatar(
-                          //     backgroundColor: isIngreso ? Colors.green : Colors.red,
-                          //     child: Icon(
-                          //       isIngreso ? Icons.arrow_upward : Icons.arrow_downward,
-                          //       color: Colors.white,
-                          //     ),
-                          //   ),
-                          //   title: Text(
-                          //     '\$${txAmount.toStringAsFixed(2)}',
-                          //     style: TextStyle(
-                          //       fontSize: 20,
-                          //       fontWeight: FontWeight.bold,
-                          //       color: isIngreso ? Colors.green : Colors.red,
-                          //     ),
-                          //   ),
-                          //   subtitle: Column(
-                          //     crossAxisAlignment: CrossAxisAlignment.start,
-                          //     children: [
-                          //       Text(tx.description),
-                          //       Text(formattedDate),
-                          //     ],
-                          //   ),
-                          // ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Ícono tipo de transacción
-                                CircleAvatar(
-                                  backgroundColor: isIngreso ? Colors.green : Colors.red,
-                                  child: Icon(
-                                    isIngreso ? Icons.arrow_upward : Icons.arrow_downward,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                // Detalles de la transacción
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '\$${txAmount.toStringAsFixed(2)}',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: isIngreso ? Colors.green : Colors.red,
-                                        ),
-                                      ),
-                                      Text(tx.description),
-                                      Text(formattedDate),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Botones de acción
-                                Column(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (_) => Padding(
-                                            padding: const EdgeInsets.only(top: 32.0),
-                                            child: AddTransacForm(
-                                              type: tx.type,
-                                              existingItem: tx,
-                                              onSaved: () {
-                                                setState(() {
-                                                  _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!);
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () async {
-                                        await TransacDatabase.instance.deleteTransac(tx.id!);
-                                        setState(() {
-                                          _transacList = _getTransacsForMonthAndYear(selectedMonth!, selectedYear!);
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                        );
-                      }
-                    },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '\$${txAmount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isIngreso ? Colors.green : Colors.red,
+                    ),
                   ),
-                ),
-              ],
+                  Text(tx.description),
+                  Text(formattedDate),
+                ],
+              ),
             ),
-          ),
-        );
-      }
+            _buildActionButtons(tx),
+          ],
+        ),
+      ),
+    );
+  }
 
-      // Widget para crear los Dropdowns de mes y año
-      Widget _buildDropdown({
-        required String value,
-        required List<String> items,
-        required ValueChanged<String?> onChanged,
-      }) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButton<String>(
+  Widget _buildActionButtons(TransacItem tx) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit, color: Colors.blueGrey),
+          onPressed: () => _showEditForm(context, tx),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _confirmDelete(context, tx.id!),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final txDate = DateTime.parse(dateString);
+      return DateFormat('dd/MM/yyyy').format(txDate);
+    } catch (e) {
+      print('Error formateando fecha: $e');
+      return dateString;
+    }
+  }
+
+  void _showEditForm(BuildContext context, TransacItem tx) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.only(top: 32.0),
+        child: AddTransacForm(
+          type: tx.type,
+          existingItem: tx,
+          onSaved: () {
+            _refreshData(); // Actualiza la lista después de guardar
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButton<String>(
         value: value,
         onChanged: onChanged,
-        isExpanded: false, // No expandir para hacerlo más minimalista
-        underline: const SizedBox(), // Eliminar la línea por debajo
+        isExpanded: false,
+        underline: const SizedBox(),
         icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
         items: items.map((item) {
           return DropdownMenuItem<String>(
@@ -254,6 +287,37 @@ class _HistoryTransacState extends State<HistoryTransac> {
             child: Text(item, style: const TextStyle(fontWeight: FontWeight.bold)),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, int transacId) async {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('¿Estás seguro?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Esta acción eliminará la transacción permanentemente.'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.delete_forever),
+            label: const Text('Eliminar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await TransacDatabase.instance.deleteTransac(transacId);
+              _refreshData();
+            },
+          ),
+        ],
       ),
     );
   }

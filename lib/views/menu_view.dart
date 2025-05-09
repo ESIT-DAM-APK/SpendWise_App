@@ -23,15 +23,17 @@ class MenuView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+
         Container(
           width: double.infinity,
-          color: Colors.green,
-          padding: const EdgeInsets.all(16),
+          color: Colors.deepOrange,
+          padding: const EdgeInsets.all(10),
           child: const Text(
             "Menu",
             style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
+
         const SizedBox(height: 10),
         const ListTile(
           title: Text("Bienvenido", style: TextStyle(color: Colors.grey)),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:test_flutter/database/transac_database.dart'; // Ajusta el path
-import 'package:test_flutter/helpers/modal_helpers.dart'; // Asegúrate de tener la función showAddIngresoModal y showAddGastoModal
+import 'package:test_flutter/database/transac_database.dart';
+import 'package:test_flutter/helpers/modal_helpers.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final Function(String tipo)? onVerDetalles; // nuevo parámetro
+
+  const DashboardScreen({super.key, this.onVerDetalles});
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -19,8 +21,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bienvenido - Usuario'),
-        centerTitle: true,
+        title: const Text('Bienvenido - Usuario', style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.deepOrange, // Cambia el color de la AppBar
+        centerTitle: false,
       ),
       body: FutureBuilder<Map<String, double>>(
         future: _getTotalAmounts(),
@@ -76,7 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'Ingresos',
                     amount: totalIngresos,
                     color: Colors.green,
-                    onPressed: () {},
+                    onPressed: () {
+                      widget.onVerDetalles?.call('Ingreso'); // title será 'Ingreso' o 'Gasto'
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildCard(
@@ -84,7 +89,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'Gastos',
                     amount: totalGastos,
                     color: Colors.red,
-                    onPressed: () {},
+                    onPressed: () {
+                      widget.onVerDetalles?.call('Gasto'); // title será 'Ingreso' o 'Gasto'
+                    },
                   ),
                   const Spacer(),
                   Row(
@@ -162,8 +169,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
+            onPressed: () {
+              // Asegúrate que el tipo sea exactamente 'Ingreso' o 'Gasto' (sin mayúsculas inconsistentes)
+              final tipo = title == 'Ingresos' ? 'Ingreso' : 'Gasto';
+              print('Enviando filtro: $tipo');
+              widget.onVerDetalles?.call(tipo);
+            },
+              // onPressed: () {
+              //   // Asegúrate de pasar exactamente 'Ingreso' o 'Gasto'
+              //   final tipo = title.toLowerCase().contains('ingreso') ? 'Ingreso' : 'Gasto';
+              //   widget.onVerDetalles?.call(tipo);
+
+              //   print('Navegando al historial con filtro: $tipo');
+
+              // },
+              style: ElevatedButton.styleFrom(
               backgroundColor: color,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(

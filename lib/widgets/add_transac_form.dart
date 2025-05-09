@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../helpers/modal_helpers.dart'; // Asegúrate de tener ahí la función saveTransaction()
+import '../helpers/modal_helpers.dart';
 import 'package:test_flutter/transac_item.dart';
-
-
+import 'package:test_flutter/database/transac_database.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 class AddTransacForm extends StatefulWidget {
   final String type;
@@ -28,9 +28,16 @@ class _AddTransacFormState extends State<AddTransacForm> {
   @override
   void initState() {
     super.initState();
-    _dateController = TextEditingController();
-    _amountController = TextEditingController();
-    _descriptionController = TextEditingController();
+    // Inicializa los controladores con los valores existentes si hay un item
+    _dateController = TextEditingController(
+      text: widget.existingItem?.date ?? ''
+    );
+    _amountController = TextEditingController(
+      text: widget.existingItem?.amount.toString() ?? ''
+    );
+    _descriptionController = TextEditingController(
+      text: widget.existingItem?.description ?? ''
+    );
   }
 
   @override
@@ -39,6 +46,49 @@ class _AddTransacFormState extends State<AddTransacForm> {
     _amountController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveOrUpdateTransaction() async {
+    final amount = _amountController.text.trim();
+    final description = _descriptionController.text.trim();
+    final date = _dateController.text.isEmpty
+        ? DateTime.now().toIso8601String()
+        : _dateController.text;
+
+    try {
+      if (widget.existingItem != null) {
+        // Actualizar transacción existente
+        final updatedItem = TransacItem(
+          id: widget.existingItem!.id,
+          type: widget.type,
+          amount: double.tryParse(amount) ?? 0,
+          date: date,
+          description: description,
+        );
+        await TransacDatabase.instance.updateTransac(updatedItem);
+      } else {
+        // Crear nueva transacción
+        await saveTransaction(
+          type: widget.type,
+          amount: amount,
+          description: description,
+          date: date,
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.existingItem != null 
+            ? 'Transacción actualizada' 
+            : 'Transacción guardada')),
+      );
+
+      widget.onSaved?.call();
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -51,7 +101,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
 
     if (pickedDate != null) {
       setState(() {
-        _dateController.text = pickedDate.toIso8601String(); // formato ISO
+        _dateController.text = pickedDate.toIso8601String();
       });
     }
   }
@@ -62,9 +112,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
     final Color bgColor = isIngreso ? Colors.green : Colors.red;
     final Color btnColor = isIngreso ? Colors.red : Colors.red;
     final String btnText = isIngreso ? 'Ingreso' : 'Gasto';
-    // color de fuente btnText blanco
     final Color btnTextColor = Colors.white;
-    final Color textColor = isIngreso ? Colors.white : Colors.white;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -76,7 +124,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
         child: Column(
           children: [
             Text(
-              'Agregar ${widget.type}',
+              widget.existingItem != null ? 'Editar ${widget.type}' : 'Agregar ${widget.type}',
               style: const TextStyle(color: Colors.white, fontSize: 24),
             ),
             const SizedBox(height: 16),
@@ -106,46 +154,14 @@ class _AddTransacFormState extends State<AddTransacForm> {
                     onTap: () => _selectDate(context),
                   ),
                   const SizedBox(height: 20),
-
                   ElevatedButton(
-                    onPressed: () async {
-                      final amount = _amountController.text.trim();
-                      final description = _descriptionController.text.trim();
-                      final date = _dateController.text.isEmpty
-                          ? DateTime.now().toIso8601String()
-                          : _dateController.text;
-
-                      try {
-                        await saveTransaction(
-                          type: widget.type,
-                          amount: amount, // Aquí como String
-                          description: description,
-                          date: date,
-                        );
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Guardado: $amount | $description | $date')),
-                        );
-
-                        // Recarga los datos y actualiza la vista (en lugar de pop)
-                        widget.onSaved?.call();
-
-                        // Cierra el modal después de guardar la transacción
-                        Navigator.pop(context);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error al guardar: ${e.toString()}')),
-                        );
-                      }
-                    },
+                    onPressed: _saveOrUpdateTransaction,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                     ),
-                    child: const Text('Confirmar'),
+                    child: Text(widget.existingItem != null ? 'Actualizar' : 'Confirmar'),
                   ),
-
                   const SizedBox(height: 8),
-
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
@@ -153,12 +169,10 @@ class _AddTransacFormState extends State<AddTransacForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: btnColor,
                     ),
-                    //color de fuente btnText blanco
                     child: Text(
-                      'Cancelar'' $btnText',
+                      'Cancelar $btnText',
                       style: TextStyle(color: btnTextColor),
                     ),
-                    //child: Text('Cancelar'+' $btnText'),
                   ),
                 ],
               ),

@@ -49,7 +49,7 @@ class TransacDatabase {
     ''');
 
   // Usuario por defecto
-    await db.insert('users', {
+    await db.insert(tableUser, {
       'username': 'admin',
       'password': '1234',
     });
@@ -69,17 +69,18 @@ class TransacDatabase {
 
   Future<void> deleteTransac(int id) async {
     final db = await instance.database;
-    await db.delete('transacciones', where: 'id = ?', whereArgs: [id]);
+    await db.delete(tableTransac, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateTransac(TransacItem item) async {
     final db = await instance.database;
     await db.update(
-      'transacciones',
+      tableTransac,
       item.toMap(),
       where: 'id = ?',
       whereArgs: [item.id],
     );
+    print("Transacción actualizada: ${item.toMap()}");
   }
 
   Future<List<TransacItem>> getAllTransacs() async {

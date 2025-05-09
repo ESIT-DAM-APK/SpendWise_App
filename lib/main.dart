@@ -4,44 +4,26 @@ import 'views/dashboard_view.dart';
 import 'views/login_view.dart'; 
 import 'views/menu_view.dart';
 
-
-
-
 void main() {
     runApp(const MyApp());
-
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'APK PRESUPUESTO PERSONAL',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromRGBO(0 , 86, 8, 1), brightness: Brightness.light),
-      useMaterial3: true),
-     // home: const MyHomePage(title: 'PRESUPUESTO PERSONAL - GRUPO 6'),
-        home: const LoginView(), // Cambié a LoginScreen
+      title: 'SpendWise APP',
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromRGBO(0, 86, 8, 0.612))),
+      home: const LoginView(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -50,37 +32,57 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
+  String? _filterTipo;
+  bool _ignoreNavBarTap = false;
+
+
   // Contenido de las páginas según el índice seleccionado
   Widget _getSelectedPage() {
     switch (_selectedIndex) {
       case 0:
-        return DashboardScreen();
-
+        return DashboardScreen(
+          onVerDetalles: (String tipo) {
+            setState(() {
+              _filterTipo = tipo;
+              _selectedIndex = 1;
+              _ignoreNavBarTap = true; // Ignorar el próximo onNavBarTap
+            });
+          },
+        );
       case 1:
-            return HistoryTransac();
-
+        return HistoryTransac(
+          filtroTipo: _filterTipo,
+          onNavBarTap: () {
+            if (!_ignoreNavBarTap) {
+              setState(() {
+                _filterTipo = null;
+              });
+            }
+            _ignoreNavBarTap = false;
+          },
+        );
       case 2:
-        // return FormTransac(onSaved: () {
-        //   setState(() {
-        //     _selectedIndex = 0; // CAMBIAR A LA VISTA DE TRANSACCIONES
-        //   });
-        // });
-        //return const Center(child: Text('Cerrar Sesion'));
         return const MenuView();
-        
       default:
         return const Center(child: Text('Página desconocida'));
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            fontSize: 28,
+            fontFamily: 'Pacifico',
+            fontWeight: FontWeight.w500,
+            color: Color.fromRGBO(0,86,60,100),
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Center(child: _getSelectedPage()),
       bottomNavigationBar: NavigationBar(
@@ -88,6 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
         onDestinationSelected: (int index) {
           setState(() {
             _selectedIndex = index;
+            // Resetear el filtro cuando se selecciona el historial desde el NavBar
+            if (index == 1) {
+              _filterTipo = null;
+            }
           });
         },
         destinations: const [
