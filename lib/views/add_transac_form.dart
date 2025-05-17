@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/modal_helpers.dart';
-import 'package:test_flutter/transac_item.dart';
+import 'package:test_flutter/models/transac_item.dart';
 import 'package:test_flutter/database/transac_database.dart';
 
 class AddTransacForm extends StatefulWidget {
@@ -118,13 +118,19 @@ class _AddTransacFormState extends State<AddTransacForm> {
     final Color btnTextColor = Colors.white;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               widget.existingItem != null ? 'Editar ${widget.type}' : 'Agregar ${widget.type}',
@@ -138,6 +144,7 @@ class _AddTransacFormState extends State<AddTransacForm> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     controller: _amountController,
@@ -157,24 +164,34 @@ class _AddTransacFormState extends State<AddTransacForm> {
                     onTap: () => _selectDate(context),
                   ),
                   const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _saveOrUpdateTransaction,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                  Center( // Envolvemos los botones en Center para controlar su ancho
+                    child: SizedBox( // Definimos un ancho específico para los botones
+                      width: 200, // Ajusta este valor según necesites
+                      child: ElevatedButton(
+                        onPressed: _saveOrUpdateTransaction,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(widget.existingItem != null ? 'Actualizar' : 'Confirmar'),
+                      ),
                     ),
-                    child: Text(widget.existingItem != null ? 'Actualizar' : 'Confirmar'),
                   ),
                   const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: btnColor,
-                    ),
-                    child: Text(
-                      'Cancelar $btnText',
-                      style: TextStyle(color: btnTextColor),
+                  Center(
+                    child: SizedBox(
+                      width: 200, // Mismo ancho que el botón anterior
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: btnColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          'Cancelar $btnText',
+                          style: TextStyle(color: btnTextColor),
+                        ),
+                      ),
                     ),
                   ),
                 ],

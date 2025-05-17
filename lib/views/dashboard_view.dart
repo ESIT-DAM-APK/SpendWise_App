@@ -28,11 +28,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = AppBar().preferredSize.height;
+    final mediaQuery = MediaQuery.of(context);
+    
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text('Bienvenido, ${widget.userName}', // Muestra el nombre
-               style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),        backgroundColor: Colors.deepOrange, 
-               centerTitle: false,
+        title: Text('Bienvenido',
+          style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.deepOrange, 
+        centerTitle: false,
       ),
       body: FutureBuilder<Map<String, double>>(
         future: _getTotalAmounts(),
@@ -50,84 +55,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final totalGastos = snapshot.data?['gastos'] ?? 0.0;
             final saldo = totalIngresos - totalGastos;
 
-            return Padding(
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: mediaQuery.size.height - appBarHeight - mediaQuery.padding.top,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // ... resto de tu contenido igual ...
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '\$${saldo.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Saldo Disponible',
+                            style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Column(
+                    const SizedBox(height: 24),
+                    _buildCard(
+                      context,
+                      title: 'Ingresos',
+                      amount: totalIngresos,
+                      color: Colors.green,
+                      onPressed: () {
+                        widget.onVerDetalles?.call('Ingreso');
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCard(
+                      context,
+                      title: 'Gastos',
+                      amount: totalGastos,
+                      color: Colors.red,
+                      onPressed: () {
+                        widget.onVerDetalles?.call('Gasto');
+                      },
+                    ),
+                    SizedBox(height: mediaQuery.size.height * 0.1),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Text(
-                          '\$${saldo.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        _buildNavButton(
+                          icon: Icons.arrow_upward,
+                          color: Colors.green,
+                          onPressed: () => showAddIngresoModal(
+                            context,
+                            refreshData: _refreshData,
+                            userId: widget.userId,
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Saldo Disponible',
-                          style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold),
+                        _buildNavButton(
+                          icon: Icons.arrow_downward,
+                          color: Colors.red,
+                          onPressed: () => showAddGastoModal(
+                            context,
+                            refreshData: _refreshData,
+                            userId: widget.userId,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildCard(
-                    context,
-                    title: 'Ingresos',
-                    amount: totalIngresos,
-                    color: Colors.green,
-                    onPressed: () {
-                      widget.onVerDetalles?.call('Ingreso'); // title será 'Ingreso' o 'Gasto'
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildCard(
-                    context,
-                    title: 'Gastos',
-                    amount: totalGastos,
-                    color: Colors.red,
-                    onPressed: () {
-                      widget.onVerDetalles?.call('Gasto'); // title será 'Ingreso' o 'Gasto'
-                    },
-                  ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavButton(
-                        icon: Icons.arrow_upward,
-                        color: Colors.green,
-                        onPressed: () => showAddIngresoModal(
-                          context,
-                          refreshData: _refreshData,
-                          userId: widget.userId, // Accede a userId a través de widget
-                        ),
-                      ),
-                      _buildNavButton(
-                        icon: Icons.arrow_downward,
-                        color: Colors.red,
-                        onPressed: () => showAddGastoModal(
-                          context,
-                          refreshData: _refreshData, // Aquí también
-                          userId: widget.userId, // Accede a userId a través de widget
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             );
           }

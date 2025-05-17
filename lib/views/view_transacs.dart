@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart';
-import 'package:test_flutter/transac_item.dart';
+import 'package:test_flutter/models/transac_item.dart';
 
 class ViewTransacs extends StatefulWidget {
   const ViewTransacs({super.key});

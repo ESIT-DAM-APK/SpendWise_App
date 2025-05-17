@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../transac_item.dart';
+import '../models/transac_item.dart';
 import 'dart:developer';
 import '../models/user_model.dart';
 

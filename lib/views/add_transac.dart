@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart'; // Ajusta el path
-import '../transac_item.dart'; 
+import '../models/transac_item.dart'; 
 
 class FormTransac extends StatefulWidget {
   final VoidCallback? onSaved;

@@ -9,7 +9,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
   Future(() async {
-    const bool isDevelopment = true; // Cambiar a false en producción
+    const bool isDevelopment = false;  // Cambiar a false en producción
     
     if (isDevelopment) {
       await TransacDatabase.instance.deleteAppDatabase();
@@ -45,7 +45,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   String? _filterTipo;
-  int currentUserId = 1; // Esto debería venir de tu sistema de autenticación
+  int currentUserId = 1 ; // Esto debería venir de tu sistema de autenticación
   bool _ignoreNavBarTap = false;
   String currentUserName = "Usuario"; // Nombre del usuario - inicializado por defecto
 

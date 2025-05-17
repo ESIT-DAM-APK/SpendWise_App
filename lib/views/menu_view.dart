@@ -40,7 +40,7 @@ class MenuView extends StatelessWidget {
         const SizedBox(height: 10),
         ListTile( // Eliminado 'const' aquí
           title: const Text("Bienvenido", style: TextStyle(color: Colors.grey)),
-          subtitle: Text("Usuario $userId", style: const TextStyle(fontWeight: FontWeight.bold)),
+         // subtitle: Text("Usuario $userId", style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
         const Divider(),
         ListTile(

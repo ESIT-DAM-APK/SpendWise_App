@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/database/transac_database.dart';
-import 'package:test_flutter/transac_item.dart';
+import 'package:test_flutter/models/transac_item.dart';
 import 'package:intl/intl.dart';
-import 'package:test_flutter/widgets/add_transac_form.dart';
+import 'package:test_flutter/views/add_transac_form.dart';
 
 class HistoryTransac extends StatefulWidget {
   final String? filtroTipo;
