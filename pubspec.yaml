@@ -48,6 +48,8 @@ dev_dependencies:
     sdk: flutter
   flutter_svg: ^2.0.9 # Usa la última versión disponible
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: "^0.13.1"
+  flutter_native_splash: ^2.3.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -100,3 +102,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_icons:
+  android: true
+  ios: true
+  #image_path: "assets/icon/icon.png"
+  image_path: "assets/images/Logo4.jpg" # Ruta de la imagen del icono
+  adaptive_icon_background: "#005608"  # Color de fondo para iconos adaptativos
+  adaptive_icon_foreground: "assets/images/logo4.jpg" # Opcional para Android
+
+flutter_native_splash:
+  color: "#005608"  # Color de fondo
+  image: "assets/images/Logo4.jpg"  # Tu logo para el splash
+  android: true
+  ios: true
