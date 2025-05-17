@@ -1,4 +1,4 @@
-# test_flutter
+# SpendWise_APP
 
 A new Flutter project.
 
